@@ -1,0 +1,10 @@
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/LdSpark.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/LdSpark_qmlimportscan.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/edit_cache.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/rebuild_cache.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/list_install_components.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/install.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/install/local.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/install/strip.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/LdSpark_autogen_timestamp_deps.dir
+/Users/oorik/CppCode/LdSpark/build/CMakeFiles/LdSpark_autogen.dir
