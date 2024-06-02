@@ -6,59 +6,84 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>261</width>
-    <height>162</height>
+    <width>420</width>
+    <height>323</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>代理</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>URL</string>
+        <string>默认代理</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="_hostname_lineedit"/>
+     <item>
+      <widget class="QRadioButton" name="radioButton">
+       <property name="text">
+        <string>开启</string>
+       </property>
+      </widget>
      </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_2">
+       <property name="text">
+        <string>关闭</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout">
      <item row="1" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>IP</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QLineEdit" name="_username_lineedit"/>
+     </item>
+     <item row="2" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>端口</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="_port_lineedit"/>
-     </item>
-     <item row="2" column="0">
+     <item row="3" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
         <string>用户名</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="_username_lineedit"/>
+     <item row="4" column="2">
+      <widget class="QLineEdit" name="_password_lineedit"/>
      </item>
-     <item row="3" column="0">
+     <item row="2" column="2">
+      <widget class="QLineEdit" name="_port_lineedit"/>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLineEdit" name="_hostname_lineedit"/>
+     </item>
+     <item row="4" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>密码</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="_password_lineedit"/>
-     </item>
     </layout>
    </item>
-   <item row="1" column="0">
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">

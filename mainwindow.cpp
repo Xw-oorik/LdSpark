@@ -9,8 +9,8 @@
 #include <QFile>
 #include <QFormLayout>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QThreadPool>
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
@@ -24,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::proxyButtonClicked);
   connect(ui->_stop_btn, &QPushButton::clicked, this,
           &MainWindow::stopButtonClicked);
+  connect(ui->_goon_btn, &QPushButton::clicked, this,
+          &MainWindow::goonButtonClicked);
   connect(ui->_export_btn, &QPushButton::clicked, this,
           &MainWindow::exportButtonClicked);
 
@@ -43,7 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
   connect(_addtask_window, &AddTaskWidget::addTask, this, &MainWindow::addTask);
   connect(_addproxy_window, &AddProxyWidget::addProxySignal, this,
           &MainWindow::addProxy);
-
+  connect(_addproxy_window, &AddProxyWidget::cancelProxySignal, this,
+          &MainWindow::cancelProxy);
   connect(_exportgraph_window, &ExportGraphWidget::exportPNGSignal, this,
           &MainWindow::exportPngSlot);
 
@@ -118,34 +121,82 @@ void MainWindow::removeButtonClicked() {
       break;
     }
   }
-
   if (task) {
-    task->stop();
-    delete ui->_task_list->takeItem(_currentTaskId);
-    _tasks.removeOne(task);
-    delete task; // 删除任务对象
+    if (task->isLoadingInProgress()) {
+      QMessageBox::warning(
+          this, "Warning",
+          "The current task stress test is continuing and cannot be deleted.");
+    } else {
+      if (task->isPause()) {
+        _tasks.removeOne(task);
+        delete task; // 删除任务对象
+        delete ui->_task_list->takeItem(_currentTaskId);
+        // 重新设置任务编号
+        for (int i = 0; i < _tasks.size(); ++i) {
+          _tasks[i]->setId(i);
+        }
+      } else {
+        task->stop();
+      }
+
+      _currentTaskId = -1;
+    }
   }
-  _currentTaskId = -1;
 }
 
 void MainWindow::proxyButtonClicked() { _addproxy_window->show(); }
 
 void MainWindow::stopButtonClicked() {
-  Task *task = nullptr;
-  for (int i = 0; i < _tasks.size(); i++) {
-    if (_tasks[i]->getId() == _currentTaskId) {
-      task = _tasks[i];
-      break;
-    }
-  }
-
+  Task *task = getCurrentTask();
   if (task) {
-    auto item = ui->_task_list->item(_currentTaskId);
-    TaskListItem *itemp = (TaskListItem *)(ui->_task_list->itemWidget(item));
-    itemp->setTaskProgressBarStop(task);
     task->stop();
+    updateTaskUI(task, false);
+    qDebug() << "qqqqqqqqqqq:" << task->isLoadingInProgress();
   }
 }
+
+void MainWindow::goonButtonClicked() {
+  Task *task = getCurrentTask();
+  if (task) {
+    task->goon();
+    updateTaskUI(task, true);
+    qDebug() << "ppppppppppp:" << task->isLoadingInProgress();
+  }
+}
+
+Task *MainWindow::getCurrentTask() {
+  for (int i = 0; i < _tasks.size(); i++) {
+    if (_tasks[i]->getId() == _currentTaskId) {
+      return _tasks[i];
+    }
+  }
+  return nullptr;
+}
+
+void MainWindow::updateTaskUI(Task *task, bool isRunning) {
+  QListWidgetItem *item = nullptr;
+  for (int i = 0; i < ui->_task_list->count(); ++i) {
+    if (TaskListItem *itemp = qobject_cast<TaskListItem *>(
+            (ui->_task_list->itemWidget(ui->_task_list->item(i))))) {
+      if (itemp->getId() == task->getId()) {
+        item = ui->_task_list->item(i);
+        break;
+      }
+    }
+  }
+  if (item) {
+    TaskListItem *itemp =
+        qobject_cast<TaskListItem *>(ui->_task_list->itemWidget(item));
+    if (itemp) {
+      if (isRunning) {
+        itemp->setTaskProgressBarGoon(task);
+      } else {
+        itemp->setTaskProgressBarStop(task);
+      }
+    }
+  }
+}
+
 void MainWindow::exportButtonClicked() {
   _exportgraph_window->updateTask();
   _exportgraph_window->show();
@@ -173,18 +224,51 @@ void MainWindow::addTask(Task *task) {
 }
 
 void MainWindow::cleanListView() {
+  if (_tasks.size() <= 0) {
+    return;
+  }
+  // 检查是不是所有任务都暂停了
+  for (auto ts : _tasks) {
+    if (ts->isLoadingInProgress()) {
+      QMessageBox::warning(
+          this, "Warning",
+          "tasklist has task stress test is continuing and cannot be deleted.");
+      return;
+    }
+  }
   // 停止并删除所有任务
   for (Task *task : _tasks) {
-    task->stop();
+    if (!task->isPause()) {
+      task->stop();
+    }
+
     delete task;
   }
   _tasks.clear(); // 清空任务列表
 
   // 清空列表视图
   ui->_task_list->clear();
+  // 只有点了任务项，才有下面东西
+  if (_isclicked_task) {
+    // 清空列表数据
+    _model->clear();
+    // 清空图表数据
+    _responseSeries->clear();
+    _requestSeries->clear();
+    _timeoutSeries->clear();
+    _errorSeries->clear();
+    _responsetimeSeries->clear();
+
+    QList<QAbstractAxis *> axes = _chart->axes();
+    for (QAbstractAxis *axis : axes) {
+      _chart->removeAxis(axis);
+      delete axis;
+    }
+  }
+
+  // 重置索引
   _currentTaskId = -1;
 }
-
 QString MainWindow::formatTaskInfo(Task *task) {
   // html format contain type and params
   QString info = "<p>type: ";
@@ -287,6 +371,15 @@ void MainWindow::updateLineView(int id, QDateTime start, QDateTime end) {
         }
       }
     }
+    // 计算平均每秒请求数
+    int totalRequests = 0;
+    for (int i = 0; i < count; ++i) {
+      totalRequests += respdata[i][0]; // 累加每秒的请求数
+    }
+    float averageRequestsPerSecond =
+        totalRequests / static_cast<float>(count); // 计算平均每秒请求数
+    // 打印平均每秒请求数
+    qDebug() << "平均每秒请求数：" << averageRequestsPerSecond;
 
     // 计算平均响应时间
     for (int i = 0; i < count; i++) {
@@ -389,6 +482,7 @@ void MainWindow::taskListItemClicked(QListWidgetItem *item) {
   updateLineView(id, QDateTime::fromSecsSinceEpoch(0),
                  QDateTime::currentDateTime());
   _currentTaskId = id;
+  _isclicked_task = true;
 }
 
 void MainWindow::addProxy(QNetworkProxy proxy) {
@@ -400,7 +494,9 @@ void MainWindow::addProxy(QNetworkProxy proxy) {
   info.append(QString::number(_proxy.port()));
   ui->statusbar->showMessage(info);
 }
-
+void MainWindow::cancelProxy() {
+  ui->statusbar->clearMessage();
+}
 void MainWindow::showResponseInfo(QListWidgetItem *item) {
   TaskListItem *task_item = (TaskListItem *)(ui->_task_list->itemWidget(item));
   int id = task_item->getId();
@@ -424,6 +520,7 @@ void MainWindow::showResponseInfo(QListWidgetItem *item) {
     _responseinfo_window->setTaskContent(content); // 显示webview
   }
   _responseinfo_window->show();
+  _isclicked_task = true;
 }
 void MainWindow::exportPngSlot(int id, QDateTime start, QDateTime end,
                                const QList<bool> &_ifchecked) {

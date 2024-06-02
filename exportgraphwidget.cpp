@@ -1,6 +1,6 @@
 #include "exportgraphwidget.h"
-#include "ui_exportgraphwidget.h"
 #include "task.h"
+#include "ui_exportgraphwidget.h"
 #include <QFileDialog>
 #include <QMessageBox>
 
@@ -24,11 +24,15 @@ ExportGraphWidget::ExportGraphWidget(QList<Task *> &tasks, QWidget *parent)
           &ExportGraphWidget::exportClicked);
   connect(ui->_all_check, &QRadioButton::toggled, this,
           &ExportGraphWidget::selectAllToggled);
+  last_id = -1;
 }
 
 ExportGraphWidget::~ExportGraphWidget() { delete ui; }
 
 void ExportGraphWidget::updateTask() {
+  disconnect(ui->_task_comb, &QComboBox::currentIndexChanged, this,
+             &ExportGraphWidget::combIndexChanged);
+
   ui->_task_comb->clear();
   for (auto task : _tasks) {
     QString item;
@@ -64,27 +68,35 @@ void ExportGraphWidget::updateTask() {
   ui->_start_time->setDateTimeRange(start, end);
   ui->_endtime->setDateTime(end);
   ui->_endtime->setDateTimeRange(start, end);
-
+  connect(ui->_task_comb, &QComboBox::currentIndexChanged, this,
+          &ExportGraphWidget::combIndexChanged);
 }
 
 void ExportGraphWidget::combIndexChanged(int index) {
-  // 设置开始和结束时间
-  QDateTime start = QDateTime::currentDateTime();
-  QDateTime end = QDateTime::currentDateTime();
   // 判断压测是否结束
+  qDebug() << "index :" << index;
+  qDebug() << "size" << _tasks.size();
   if (index >= 0 && _tasks.size() > index) {
     auto select_task = _tasks[index];
-    if (!select_task->isLoadingInProgress()) {
+    if (select_task->isLoadingInProgress()) {
       QMessageBox::warning(this, tr("Warning"),
                            tr("The selected task is currently being load "
                               "tested. Please wait until it finishes."));
-      // 把combobox设置成原来的选项，不做改变
-      // ui->_task_comb->blockSignals(true); // 阻止 combobox 的信号
-      // ui->_task_comb->setCurrentIndex(_tasks.indexOf(_selectedTask));
-      // ui->_task_comb->blockSignals(false); // 解除 combobox 的信号阻止
+      if (last_id >= 0 && last_id < _tasks.size()) {
+        for (int i = 0; i < _tasks.size(); ++i) {
+          if (_tasks[i]->getId() == last_id) {
+            ui->_task_comb->setCurrentIndex(i);
+            return;
+          }
+        }
+      }
       return;
     }
   }
+  // 设置开始和结束时间
+  QDateTime start = QDateTime::currentDateTime();
+  QDateTime end = QDateTime::currentDateTime();
+
   // 设置开始和结束时间
   if (index >= 0 && _tasks.size() > index) {
     auto task = _tasks[index];
@@ -108,12 +120,14 @@ void ExportGraphWidget::combIndexChanged(int index) {
   ui->_start_time->setDateTimeRange(start, end);
   ui->_endtime->setDateTime(end);
   ui->_endtime->setDateTimeRange(start, end);
-  // 更新选中的任务
-  // if (index >= 0 && index < _tasks.size()) {
-  //   _selectedTask = _tasks[index];
-  // } else {
-  //   _selectedTask = nullptr;
-  // }
+
+  // 更新最新选中的任务ID
+  if (index >= 0 && _tasks.size() > index) {
+    last_id = _tasks[index]->getId();
+  } else {
+    last_id = -1; // 如果没有有效的任务被选中，重置last_id
+  }
+  qDebug()<<"last_id:"<<last_id;
 }
 
 void ExportGraphWidget::exportClicked() {

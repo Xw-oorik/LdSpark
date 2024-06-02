@@ -3,10 +3,10 @@
 #include <QFile>
 #include <QPalette>
 TaskListItem::TaskListItem(int taskid, QWidget *parent)
-    : QWidget(parent), ui(new Ui::TaskListItem) {
+    : QWidget(parent), ui(new Ui::TaskListItem),
+      progressbar_timer(new QTimer(this)) {
   ui->setupUi(this);
   _taskid = taskid;
-  progressbar_timer = new QTimer(this);
 }
 
 TaskListItem::~TaskListItem() { delete ui; }
@@ -18,25 +18,30 @@ void TaskListItem::setName(QString name) { ui->_name_label->setText(name); }
 int TaskListItem::getId() { return _taskid; }
 
 void TaskListItem::setTaskProgressBarStart(Task *task) {
+  // Ensure timer is stopped before starting a new task
+  progressbar_timer->stop();
+  disconnect(progressbar_timer, &QTimer::timeout, nullptr, nullptr);
+
   if (task->getType() == Task::Type::TIME) {
-    progressbar_timer->start(10);
     ui->_progressBar->setTextVisible(false);
-    auto timeval = task->getTimeInterval();
+    int timeval = task->getTimeInterval();
     ui->_progressBar->setMaximum(timeval);
+    ui->_progressBar->setValue(0);
+    progressbar_timer->start(10);
     connect(progressbar_timer, &QTimer::timeout, this, [=]() {
       int current_val = ui->_progressBar->value();
       if (current_val >= timeval) {
         progressbar_timer->stop();
       } else {
-        ui->_progressBar->setValue(current_val +
-                                   5); //+10是根据task的timer定时器默认设置的
+        ui->_progressBar->setValue(current_val + 10);
       }
     });
   } else if (task->getType() == Task::Type::LOOP) {
-    progressbar_timer->start(1);
     ui->_progressBar->setTextVisible(false);
-    auto loopval = task->getLoopTime() * 300;
+    int loopval = task->getLoopTime() * 400;
     ui->_progressBar->setMaximum(loopval);
+    ui->_progressBar->setValue(0);
+    progressbar_timer->start(1);
     connect(progressbar_timer, &QTimer::timeout, this, [=]() {
       int current_val = ui->_progressBar->value();
       if (current_val >= loopval) {
@@ -46,10 +51,35 @@ void TaskListItem::setTaskProgressBarStart(Task *task) {
       }
     });
   } else {
-    ui->_progressBar->setRange(0, 0);
+    ui->_progressBar->setRange(0, 0); // Indeterminate progress
   }
 }
 
 void TaskListItem::setTaskProgressBarStop(Task *task) {
   progressbar_timer->stop();
+}
+void TaskListItem::setTaskProgressBarGoon(Task *task) {
+  if (task->getType() == Task::Type::TIME) {
+    int timeval = task->getTimeInterval();
+    progressbar_timer->start(10);
+    connect(progressbar_timer, &QTimer::timeout, this, [=]() {
+      int current_val = ui->_progressBar->value();
+      if (current_val >= timeval) {
+        progressbar_timer->stop();
+      } else {
+        ui->_progressBar->setValue(current_val + 2);
+      }
+    });
+  } else if (task->getType() == Task::Type::LOOP) {
+    int loopval = task->getLoopTime() * 400;
+    progressbar_timer->start(1);
+    connect(progressbar_timer, &QTimer::timeout, this, [=]() {
+      int current_val = ui->_progressBar->value();
+      if (current_val >= loopval) {
+        progressbar_timer->stop();
+      } else {
+        ui->_progressBar->setValue(current_val + 1);
+      }
+    });
+  }
 }

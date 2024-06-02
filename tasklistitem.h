@@ -2,8 +2,8 @@
 #define TASKLISTITEM_H
 
 #include "task.h"
-#include <QWidget>
 #include <QTimer>
+#include <QWidget>
 namespace Ui {
 class TaskListItem;
 }
@@ -19,11 +19,12 @@ public:
   int getId();
   void setTaskProgressBarStart(Task *task);
   void setTaskProgressBarStop(Task *task);
+  void setTaskProgressBarGoon(Task *task);
 
 private:
   Ui::TaskListItem *ui;
   int _taskid;
-  QTimer * progressbar_timer;
+  QTimer *progressbar_timer = nullptr;
 };
 
 #endif // TASKLISTITEM_H

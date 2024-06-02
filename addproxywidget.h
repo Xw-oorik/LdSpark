@@ -2,6 +2,7 @@
 #define ADDPROXYWIDGET_H
 
 #include <QNetworkProxy>
+#include <QProcess>
 #include <QWidget>
 namespace Ui {
 class AddProxyWidget;
@@ -15,13 +16,16 @@ public:
   ~AddProxyWidget();
 signals:
   void addProxySignal(QNetworkProxy proxy);
-
+  void cancelProxySignal();
 private slots:
   void addButtonClicked();
   void cancelButtonClicked();
-
+  void onDefaultConfigClicked(bool click);
+  void cancelDefaultConfigClicked(bool click);
 private:
   Ui::AddProxyWidget *ui;
+  QProcess *proxyProcess;
+  void readTinyConfig();
 };
 
 #endif // ADDPROXYWIDGET_H

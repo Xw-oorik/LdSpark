@@ -2,7 +2,9 @@
 #define HTTP_H__
 #include <QDateTime>
 #include <QElapsedTimer>
+#include <QMutex>
 #include <QNetworkAccessManager>
+#include <QNetworkProxy>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QObject>
@@ -10,8 +12,8 @@
 #include <QRunnable>
 #include <QThread>
 #include <QVariant>
+#include <QWaitCondition>
 #include <iostream>
-#include <QNetworkProxy>
 
 enum class HttpMethod : int { GET, POST, PUT, DELETE, HEAD };
 enum class HttpError : int { NO_ERROR, TIMEOUT, ERROR };
@@ -44,7 +46,9 @@ class HttpClient : public QObject, public QRunnable {
   Q_OBJECT
 public:
   HttpClient(
-      HttpMethod method, const QString &url, const QString &data = "",
+      QMutex *pausemutex, QWaitCondition *pausecond,
+      bool *ispause, HttpMethod method, const QString &url,
+      const QString &data = "",
       const QNetworkRequest::KnownHeaders &headertype =
           QNetworkRequest::ContentTypeHeader,
       const QVariant &header = QVariant("application/x-www-form-urlencoded"),
@@ -62,6 +66,9 @@ private:
   QVariant _header;
   qint64 _timeout;
   QNetworkProxy _proxy;
+  QMutex *pauseMutex;
+  QWaitCondition *pauseCond;
+  bool *isPaused;
 };
 
 #endif

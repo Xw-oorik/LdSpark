@@ -38,8 +38,8 @@
       <property name="title">
        <string/>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
         <widget class="QLabel" name="label">
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
@@ -58,14 +58,20 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QPushButton" name="_stop_btn">
-         <property name="text">
-          <string>停止</string>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
-        </widget>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
-       <item row="2" column="0">
+       <item>
         <widget class="QComboBox" name="comboBox">
          <property name="sizeAdjustPolicy">
           <enum>QComboBox::AdjustToContents</enum>
@@ -90,48 +96,49 @@
          </item>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QPushButton" name="_add_btn">
-         <property name="text">
-          <string>添加</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QPushButton" name="_remove_btn">
-         <property name="text">
-          <string>移除</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QPushButton" name="_export_btn">
-         <property name="text">
-          <string>导出</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="0">
+       <item>
         <widget class="QPushButton" name="_proxy_btn">
          <property name="text">
           <string>代理设置</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
+       <item>
+        <widget class="QPushButton" name="_stop_btn">
+         <property name="text">
+          <string>停止</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="_goon_btn">
+         <property name="text">
+          <string>继续</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="_export_btn">
+         <property name="text">
+          <string>导出</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="_add_btn">
+         <property name="text">
+          <string>添加</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="_remove_btn">
+         <property name="text">
+          <string>移除</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="_clean_btn">
          <property name="text">
           <string>清空</string>

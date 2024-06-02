@@ -65,7 +65,7 @@
          <enum>QFrame::Plain</enum>
         </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string>任务名</string>
         </property>
        </widget>
       </item>
@@ -79,6 +79,9 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
+        </property>
+        <property name="textVisible">
+         <bool>false</bool>
         </property>
         <property name="format">
          <string>%v/%m</string>
@@ -100,7 +103,7 @@
          <enum>QFrame::NoFrame</enum>
         </property>
         <property name="text">
-         <string>TextLabel</string>
+         <string>类型</string>
         </property>
        </widget>
       </item>

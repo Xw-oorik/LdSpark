@@ -18,11 +18,13 @@ QString HttpErrorToString(HttpError error) {
   }
 }
 // Path: http.cpp
-HttpClient::HttpClient(HttpMethod method, const QString &url,
+HttpClient::HttpClient(QMutex *pausemutex, QWaitCondition *pausecond,
+                       bool *ispause, HttpMethod method, const QString &url,
                        const QString &data,
                        const QNetworkRequest::KnownHeaders &headertype,
                        const QVariant &header, qint64 timeout)
-    : QRunnable() {
+    : pauseMutex(pausemutex), pauseCond(pausecond), isPaused(ispause),
+      QRunnable() {
   this->_method = method;
   this->_url = url;
   this->_data = data;
@@ -51,6 +53,12 @@ QString HttpMethodToString(HttpMethod method) {
 }
 
 void HttpClient::run() {
+  QMutexLocker locker(pauseMutex);
+  while (*isPaused) {
+    pauseCond->wait(pauseMutex);
+  }
+  locker.unlock();
+
   QNetworkAccessManager *manager = new QNetworkAccessManager();
   if (_proxy.hostName().size() > 0 && _proxy.port() > 0) {
     manager->setProxy(_proxy);
@@ -91,7 +99,6 @@ void HttpClient::run() {
     reply = manager->get(request);
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
   }
-
   loop.exec(); // 阻塞，直至接收结束或者超时
   qint64 millseconds = elapsedtimer.elapsed(); // 结束计时， 获取经过的毫秒数
   HttpResponse response;
@@ -119,6 +126,7 @@ void HttpClient::run() {
   disconnect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
   disconnect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
   reply->deleteLater();
+  manager->deleteLater();
   emit finished(response);
 }
 

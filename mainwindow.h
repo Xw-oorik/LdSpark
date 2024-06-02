@@ -24,13 +24,14 @@ class MainWindow : public QMainWindow {
 private slots:
   void addButtonClicked();
   void removeButtonClicked();
+  void goonButtonClicked();
   void stopButtonClicked();
   void exportButtonClicked();
   void proxyButtonClicked();
   void addTask(Task *task);
   void addProxy(QNetworkProxy proxy);
   void showResponseInfo(QListWidgetItem *item);
-
+  void cancelProxy();
 public:
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
@@ -42,6 +43,8 @@ private:
   void taskListItemClicked(QListWidgetItem *item);
   void updateLineView(int id, QDateTime start, QDateTime end);
   void saveImage(const QString &fileName, const QPixmap &pixmap);
+  Task* getCurrentTask();
+  void updateTaskUI(Task *task, bool isRunning);
 
 protected:
   void exportPngSlot(int id, QDateTime start, QDateTime end,
@@ -60,16 +63,16 @@ private:
   QChart *_chart = nullptr; // 图标的容器
 
   // 图表数据
-  QSplineSeries *_requestSeries = nullptr;    // 请求
-  QSplineSeries *_responseSeries = nullptr;   // 响应
-  QSplineSeries *_errorSeries = nullptr;      // 错误
-  QSplineSeries *_timeoutSeries = nullptr;    // 超时
+  QSplineSeries *_requestSeries = nullptr;      // 请求
+  QSplineSeries *_responseSeries = nullptr;     // 响应
+  QSplineSeries *_errorSeries = nullptr;        // 错误
+  QSplineSeries *_timeoutSeries = nullptr;      // 超时
   QSplineSeries *_responsetimeSeries = nullptr; // 平均响应时间
   // 网络代理
   QNetworkProxy _proxy;
   // 当前任务id
   int _currentTaskId = -1;
-  // 内容webview
-  // QWebEngineView *_webView;
+  // 是否点击了列表项
+  bool _isclicked_task = false;
 };
 #endif // MAINWINDOW_H

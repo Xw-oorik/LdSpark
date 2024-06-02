@@ -49,7 +49,7 @@ void AddTaskWidget::addTaskButtonClicked() {
   QString body = ui->_task_body_lineedit->text();
 
   if (task_name.isEmpty() || task_url.isEmpty() || thread_num.isEmpty()) {
-    QMessageBox::warning(this, "警告", "任务名、URL、线程数不能为空");
+    QMessageBox::warning(this, "警告", "任务名、URL、并发数不能为空");
     return;
   }
 
@@ -58,7 +58,7 @@ void AddTaskWidget::addTaskButtonClicked() {
   int thread_num_int = thread_num.toInt(&ok);
   int para_int = 0;
   if (!ok) {
-    QMessageBox::warning(this, "警告", "线程数必须为数字");
+    QMessageBox::warning(this, "警告", "并发数必须为数字");
     return;
   }
   // 如果类型不是 ONCE 检查 Para 是否为数字

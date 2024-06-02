@@ -22,6 +22,7 @@ public:
   void setLoopTime(qint64 loop_time);
   qint64 getLoopTime();
   void stop();
+  void goon();
   void setId(int id);
   QString getName();
   QString getUrl();
@@ -32,7 +33,7 @@ public:
   void setIsProxy(bool is_proxy);
   bool getIsProxy();
   bool isLoadingInProgress();
-
+  bool isPause();
 private:
   void startOnce();
   void startTimes();
@@ -54,6 +55,7 @@ private:
   QByteArray _http_data;
   bool _isrunning = false;
   QTimer *_timer = nullptr;
+  QTimer *_elapsed_timer = nullptr;
   bool isDestroy = false;
   QList<HttpResponse> result;
   QNetworkProxy _proxy;
@@ -61,6 +63,10 @@ private:
   QMutex *mutex = nullptr;
   // 表示压测是否正在进行中
   bool isLoadTestingInProgress = false;
+  int _currentLoopCount; // 当前循环计数器
+  bool _is_Pause;
+  QMutex *pausemutex = nullptr;
+  QWaitCondition *pauseCond = nullptr;
 };
 
 #endif
