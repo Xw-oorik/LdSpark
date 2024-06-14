@@ -53,6 +53,14 @@ QString HttpMethodToString(HttpMethod method) {
 }
 
 void HttpClient::run() {
+  // 检查是否需要暂停
+  // {
+  //   QMutexLocker locker(pauseMutex);
+  //   while (*isPaused) {
+  //     pauseCond->wait(pauseMutex);
+  //   }
+  // } // 确保在请求开始前释放锁
+  // 等价
   QMutexLocker locker(pauseMutex);
   while (*isPaused) {
     pauseCond->wait(pauseMutex);

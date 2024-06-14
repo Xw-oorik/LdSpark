@@ -16,7 +16,9 @@ void TaskListItem::setInfo(QString info) { ui->_info_label->setText(info); }
 void TaskListItem::setName(QString name) { ui->_name_label->setText(name); }
 
 int TaskListItem::getId() { return _taskid; }
-
+void TaskListItem::setId(int id) {
+  _taskid=id;
+}
 void TaskListItem::setTaskProgressBarStart(Task *task) {
   // Ensure timer is stopped before starting a new task
   progressbar_timer->stop();

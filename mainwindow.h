@@ -7,9 +7,9 @@
 #include "responseinfowidget.h"
 #include "task.h"
 #include <QChartView>
+#include <QLineSeries>
 #include <QListWidgetItem>
 #include <QMainWindow>
-#include <QSplineSeries>
 #include <QtCharts>
 
 QT_BEGIN_NAMESPACE
@@ -32,6 +32,7 @@ private slots:
   void addProxy(QNetworkProxy proxy);
   void showResponseInfo(QListWidgetItem *item);
   void cancelProxy();
+
 public:
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
@@ -43,7 +44,7 @@ private:
   void taskListItemClicked(QListWidgetItem *item);
   void updateLineView(int id, QDateTime start, QDateTime end);
   void saveImage(const QString &fileName, const QPixmap &pixmap);
-  Task* getCurrentTask();
+  Task *getCurrentTask();
   void updateTaskUI(Task *task, bool isRunning);
 
 protected:
@@ -63,11 +64,11 @@ private:
   QChart *_chart = nullptr; // 图标的容器
 
   // 图表数据
-  QSplineSeries *_requestSeries = nullptr;      // 请求
-  QSplineSeries *_responseSeries = nullptr;     // 响应
-  QSplineSeries *_errorSeries = nullptr;        // 错误
-  QSplineSeries *_timeoutSeries = nullptr;      // 超时
-  QSplineSeries *_responsetimeSeries = nullptr; // 平均响应时间
+  QLineSeries *_requestSeries = nullptr;      // 请求
+  QLineSeries *_responseSeries = nullptr;     // 响应
+  QLineSeries *_errorSeries = nullptr;        // 错误
+  QLineSeries *_timeoutSeries = nullptr;      // 超时
+  QLineSeries *_responsetimeSeries = nullptr; // 平均响应时间
   // 网络代理
   QNetworkProxy _proxy;
   // 当前任务id

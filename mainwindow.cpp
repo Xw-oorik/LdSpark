@@ -66,31 +66,31 @@ MainWindow::MainWindow(QWidget *parent)
       QChartView::RectangleRubberBand); // 画个矩形区域进行缩放
   ui->_graph_view->setDragMode(QGraphicsView::ScrollHandDrag); // 手型 移动
 
-  _requestSeries = new QSplineSeries();
+  _requestSeries = new QLineSeries();
   _requestSeries->setName("请求数");
   _requestSeries->setObjectName("request");
   _requestSeries->setColor(QColor(0, 255, 0));
   _requestSeries->setPointsVisible(true);
 
-  _responseSeries = new QSplineSeries();
+  _responseSeries = new QLineSeries();
   _responseSeries->setObjectName("response");
   _responseSeries->setName("响应数");
   _responseSeries->setColor(QColor(255, 0, 0));
   _responseSeries->setPointsVisible(true);
 
-  _timeoutSeries = new QSplineSeries();
+  _timeoutSeries = new QLineSeries();
   _timeoutSeries->setName("超时数");
   _timeoutSeries->setObjectName("timeout");
   _timeoutSeries->setColor(QColor(0, 0, 255));
   _timeoutSeries->setPointsVisible(true);
 
-  _errorSeries = new QSplineSeries();
+  _errorSeries = new QLineSeries();
   _errorSeries->setName("错误数");
   _errorSeries->setObjectName("error");
   _errorSeries->setColor(QColor(255, 255, 0));
   _errorSeries->setPointsVisible(true);
 
-  _responsetimeSeries = new QSplineSeries();
+  _responsetimeSeries = new QLineSeries();
   _responsetimeSeries->setName("平均响应时间");
   _responsetimeSeries->setObjectName("responsetime");
   _responsetimeSeries->setColor(QColor(255, 0, 255));
@@ -116,7 +116,7 @@ void MainWindow::addButtonClicked() { _addtask_window->show(); }
 void MainWindow::removeButtonClicked() {
   Task *task = nullptr;
   for (int i = 0; i < _tasks.size(); i++) {
-    if (_tasks[i]->getId() == _currentTaskId) {
+    if (_tasks[i]->getId() == ui->_task_list->currentRow()) {
       task = _tasks[i];
       break;
     }
@@ -127,19 +127,38 @@ void MainWindow::removeButtonClicked() {
           this, "Warning",
           "The current task stress test is continuing and cannot be deleted.");
     } else {
-      if (task->isPause()) {
+      if (task->isPause() || !task->isLoadingInProgress()) {
         _tasks.removeOne(task);
         delete task; // 删除任务对象
-        delete ui->_task_list->takeItem(_currentTaskId);
+        delete ui->_task_list->currentItem();
+        _model->clear(); // 清空表格数据
+
+        // 清空图表数据
+        _responseSeries->clear();
+        _requestSeries->clear();
+        _timeoutSeries->clear();
+        _errorSeries->clear();
+        _responsetimeSeries->clear();
+
+        // 移除所有轴
+        QList<QAbstractAxis *> axes = _chart->axes();
+        for (QAbstractAxis *axis : axes) {
+          _chart->removeAxis(axis);
+          delete axis;
+        }
         // 重新设置任务编号
         for (int i = 0; i < _tasks.size(); ++i) {
           _tasks[i]->setId(i);
+          QListWidgetItem *item = ui->_task_list->item(i);
+          TaskListItem *taskItem =
+              qobject_cast<TaskListItem *>(ui->_task_list->itemWidget(item));
+          if (taskItem) {
+            taskItem->setId(i);
+          }
         }
       } else {
         task->stop();
       }
-
-      _currentTaskId = -1;
     }
   }
 }
@@ -151,7 +170,6 @@ void MainWindow::stopButtonClicked() {
   if (task) {
     task->stop();
     updateTaskUI(task, false);
-    qDebug() << "qqqqqqqqqqq:" << task->isLoadingInProgress();
   }
 }
 
@@ -160,13 +178,12 @@ void MainWindow::goonButtonClicked() {
   if (task) {
     task->goon();
     updateTaskUI(task, true);
-    qDebug() << "ppppppppppp:" << task->isLoadingInProgress();
   }
 }
 
 Task *MainWindow::getCurrentTask() {
   for (int i = 0; i < _tasks.size(); i++) {
-    if (_tasks[i]->getId() == _currentTaskId) {
+    if (_tasks[i]->getId() == ui->_task_list->currentRow()) {
       return _tasks[i];
     }
   }
@@ -265,9 +282,6 @@ void MainWindow::cleanListView() {
       delete axis;
     }
   }
-
-  // 重置索引
-  _currentTaskId = -1;
 }
 QString MainWindow::formatTaskInfo(Task *task) {
   // html format contain type and params
@@ -379,7 +393,7 @@ void MainWindow::updateLineView(int id, QDateTime start, QDateTime end) {
     float averageRequestsPerSecond =
         totalRequests / static_cast<float>(count); // 计算平均每秒请求数
     // 打印平均每秒请求数
-    qDebug() << "平均每秒请求数：" << averageRequestsPerSecond;
+    qDebug() << "avg_resquest/mills：" << averageRequestsPerSecond;
 
     // 计算平均响应时间
     for (int i = 0; i < count; i++) {
@@ -481,7 +495,6 @@ void MainWindow::taskListItemClicked(QListWidgetItem *item) {
   // 更新图表数据
   updateLineView(id, QDateTime::fromSecsSinceEpoch(0),
                  QDateTime::currentDateTime());
-  _currentTaskId = id;
   _isclicked_task = true;
 }
 
@@ -494,9 +507,7 @@ void MainWindow::addProxy(QNetworkProxy proxy) {
   info.append(QString::number(_proxy.port()));
   ui->statusbar->showMessage(info);
 }
-void MainWindow::cancelProxy() {
-  ui->statusbar->clearMessage();
-}
+void MainWindow::cancelProxy() { ui->statusbar->clearMessage(); }
 void MainWindow::showResponseInfo(QListWidgetItem *item) {
   TaskListItem *task_item = (TaskListItem *)(ui->_task_list->itemWidget(item));
   int id = task_item->getId();
@@ -512,10 +523,6 @@ void MainWindow::showResponseInfo(QListWidgetItem *item) {
     _responseinfo_window->setTaskName(task->getName());
     QString content;
     auto results = task->getResult();
-    // for (auto result : results) {
-    //   content.append(result.data);
-    //   content.append("\n");
-    // }
     content.append(results[0].data);
     _responseinfo_window->setTaskContent(content); // 显示webview
   }

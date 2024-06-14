@@ -67,6 +67,7 @@ private:
   bool _is_Pause;
   QMutex *pausemutex = nullptr;
   QWaitCondition *pauseCond = nullptr;
+  long long remainingtime = 0;
 };
 
 #endif

@@ -17,6 +17,7 @@ public:
   void setInfo(QString info);
   void setName(QString name);
   int getId();
+  void setId(int id);
   void setTaskProgressBarStart(Task *task);
   void setTaskProgressBarStop(Task *task);
   void setTaskProgressBarGoon(Task *task);

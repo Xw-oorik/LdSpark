@@ -2,7 +2,6 @@
 #include <QCoreApplication>
 #include <QMutexLocker>
 #include <cassert>
-
 Task::Task(QString task_name, QString task_url, int thread_num, Type type,
            HttpMethod http_type, QByteArray http_data)
     : _currentLoopCount(0), _is_Pause(false) {
@@ -23,13 +22,15 @@ Task::Task(QString task_name, QString task_url, int thread_num, Type type,
 }
 
 Task::~Task() {
+
+  // 确保互斥锁已解锁
+  { QMutexLocker locker(pausemutex); }
+
   delete mutex;
   delete pausemutex;
   delete pauseCond;
-  if (_thread_pool) {
-    _thread_pool->waitForDone();
-    delete _thread_pool;
-  }
+
+  delete _thread_pool;
 }
 
 void Task::start() {
@@ -69,7 +70,6 @@ void Task::startTimes() {
   _timer->start(10);                 // 每10毫秒，做任务
   _elapsed_timer = new QTimer(this); // 用来判断到设置时间没有
   _elapsed_timer->start(_time_interval);
-
   connect(_timer, &QTimer::timeout, this, [=]() {
     if (_is_Pause) {
       return;
@@ -85,6 +85,7 @@ void Task::startTimes() {
   });
   connect(_elapsed_timer, &QTimer::timeout, this, [=]() {
     _timer->stop();
+    _elapsed_timer->stop();
     _thread_pool->clear();
     isLoadTestingInProgress = false;
   });
@@ -98,7 +99,6 @@ void Task::startLoop() {
       break;
     }
     if (_currentLoopCount >= _loop_time) {
-      qDebug() << "create loop over";
       break;
     }
     HttpClient *client =
@@ -123,17 +123,13 @@ void Task::finished(HttpResponse response) {
   } else if (_type == Type::LOOP) {
     result.append(response);
     _currentLoopCount++;
+    qDebug() << "[TYPE]:[LOOP]->HttpRequest finished, current result size:"
+             << result.size();
     if (_currentLoopCount >= _loop_time) { // loop结束
       qDebug() << "Loop over";
       _thread_pool->clear(); // 在所有循环完成后清除线程池中的任务
       isLoadTestingInProgress = false;
     }
-    qDebug() << "[TYPE]:[LOOP]->HttpRequest finished, current result size:"
-             << result.size();
-    // qDebug() << "--------------------------";
-    // qDebug() << "this is cnt: " << _currentLoopCount;
-    // qDebug() << ":" << _loop_time;
-    // qDebug() << "--------------------------";
   } else {
     result.append(response);
     qDebug() << "[TYPE]:[TIME]->HttpRequest finished, current result size:"
@@ -148,26 +144,31 @@ void Task::setTimeInterval(qint64 time_interval) {
 void Task::setLoopTime(qint64 loop_time) { _loop_time = loop_time; }
 
 void Task::stop() {
-  //QMutexLocker locker(pausemutex);
+  QMutexLocker locker(pausemutex); // 确保线程安全
   _is_Pause = true;
   if (_type == Type::TIME) {
     _timer->stop();
+    remainingtime = _elapsed_timer->remainingTime(); // 记录剩余时间
     _elapsed_timer->stop();
+    _thread_pool->clear(); // 清除所有待处理的任务
     qDebug() << "[STOP]->[TIME]";
   } else if (_type == Type::LOOP) {
     qDebug() << "[STOP]->[LOOP]";
-    //_is_Pause为true即可
+    _thread_pool->clear(); // 清除所有待处理的任务
+                           // goon的时候loop会重新启动，所以这里要clear
+    _thread_pool->waitForDone(); // 等待所有已开始的任务完成
   }
-  //_thread_pool->clear(); // Stop all active tasks in the thread pool
+
   isLoadTestingInProgress = false;
 }
+
 void Task::goon() {
-  //QMutexLocker locker(pausemutex);
+  QMutexLocker locker(pausemutex);
   _is_Pause = false;
   pauseCond->wakeAll();
   if (_type == Type::TIME) {
     _timer->start();
-    _elapsed_timer->start(_elapsed_timer->remainingTime());
+    _elapsed_timer->start(remainingtime);
     qDebug() << "[GOON]->[TIME]";
   } else if (_type == Type::LOOP) {
     startLoop();
